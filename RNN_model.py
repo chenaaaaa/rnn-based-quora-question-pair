@@ -82,29 +82,39 @@ class TextRNN(object):
             cell = tf.contrib.rnn.BasicLSTMCell(self.number_units, state_is_tuple=True)
         elif self.rnn_type=="gru": ##needs to check
             cell = tf.nn.rnn_cell.GRUCell(self.number_units, input_size=None, activation=tanh)
-        print "in add_encoer:cell generated"
-        init_state = tf.get_variable('init_state', [1,self.number_units],
-                                      initializer = tf.constant_initializer(0.0))
-	print "ini_state first is", init_state.shape
 
-        init_state = tf.tile(init_state, [self.batch_size,1])
-	print "ini_state second is", init_state.shape
+        print "in add_encoer:cell generated"
+	## for variable reuse ....
+        self.init_state0 = tf.get_variable('init_state', [1,self.number_units],
+                                      initializer = tf.constant_initializer(0.0))
+	print "ini_state0 is", self.init_state0.shape
+
+        self.init_state = tf.tile(self.init_state0, [self.batch_size,1])
+	print "ini_state second is", self.init_state.shape
         
-        self.rnn_outputs1, self.final_state1 = tf.nn.dynamic_rnn(cell, self.x1, sequence_length = self.input_seqlen1, initial_state=init_state)
-        self.rnn_outputs2, self.final_state2 = tf.nn.dynamic_rnn(cell, self.x2, sequence_length = self.input_seqlen2, initial_state=init_state)
+        self.rnn_outputs1, _ = tf.nn.dynamic_rnn(cell, self.x1, sequence_length = self.input_seqlen1, initial_state=self.init_state)
+        self.rnn_outputs2, _ = tf.nn.dynamic_rnn(cell, self.x2, sequence_length = self.input_seqlen2, initial_state=self.init_state)
 
        
     def add_dropout(self):
         #add droptout, as the model otherwise quickly overfits . really ??
         self.rnn_outputs1 = tf.nn.dropout(self.rnn_outputs1, self.dropout_keep_prob)
         self.rnn_outputs2 = tf.nn.dropout(self.rnn_outputs2, self.dropout_keep_prob)
-        
+       
     def add_final_state(self):
-        idx1 = tf.range(self.batch_size)* tf.shape(self.rnn_outputs1)[1] + (self.input_seqlen1-1)
-        idx2 = tf.range(self.batch_size)* tf.shape(self.rnn_outputs2)[1] + (self.input_seqlen2-1)
-        
-        self.last_rnn_output1 = tf.gather(tf.reshape(self.rnn_outputs1, [-1, self.number_units]),idx1)
-        self.last_rnn_output2 = tf.gather(tf.reshape(self.rnn_outputs2, [-1, self.number_units]),idx2)
+	print "tf.range is",tf.range(self.batch_size)
+	print "tf.shape(self.rnn_outputs1)[1] is",tf.shape(self.rnn_outputs1    )[1]
+
+        self.idx1 = tf.range(self.batch_size)* tf.shape(self.rnn_outputs1)[1] + (self.input_seqlen1-1)
+        self.idx2 = tf.range(self.batch_size)* tf.shape(self.rnn_outputs2)[1] + (self.input_seqlen2-1)
+       
+ 	## just for test purpose begin
+	self.Reshape_1 = tf.reshape(self.rnn_outputs1, [-1, self.number_units]) 
+	self.Reshape_2 = tf.reshape(self.rnn_outputs2, [-1, self.number_units]) 
+	## just for test purpose end
+
+        self.last_rnn_output1 = tf.gather(tf.reshape(self.rnn_outputs1, [-1, self.number_units]),self.idx1)
+        self.last_rnn_output2 = tf.gather(tf.reshape(self.rnn_outputs2, [-1, self.number_units]),self.idx2)
         
     def add_loss(self):
         ## caculte "difference" between encoder output of sentense1 and sentense2
@@ -112,6 +122,7 @@ class TextRNN(object):
         self.diff     = self.last_rnn_output1 - self.last_rnn_output2          ##shape [batch_size, num_units]
 
         self.diff_abs = tf.abs(self.diff)                                 ##shape [batch_size, num_units]
+
         self.diff_abs_sum = tf.reduce_sum(self.diff_abs, axis=1)             ##shape [batch_size]
         
         ## squeeze the norm1 distance between (0,1)
@@ -120,9 +131,10 @@ class TextRNN(object):
         ## automatically learn the "threshold" 
         ##"use this nolinear to map exp(-||x1-x2||) (L1 norm diff) to probability")
         with tf.name_scope("threshold"):
-            W = tf.Variable([1.0], name="W")
-            b = tf.Variable([tf.log(0.5)], name="b")
-            self.wx_plus_b = self.diff_exp * W + b               ## shape [batch_size]
+            self.thre_W = tf.Variable(name="W", initial_value = 1.0)
+            self.thre_b = tf.Variable(name="b", initial_value = tf.log(0.5))
+
+            self.wx_plus_b = self.diff_exp * self.thre_W + self.thre_b               ## shape [batch_size]
         ##apply sigmoid OR relu ??
         if (self.nonlinear_type == "sigmoid"):
             self.prob = 1/(1+tf.exp(-1.0 * self.wx_plus_b)) ## shape[batch_size]
@@ -132,14 +144,14 @@ class TextRNN(object):
         ## use logistic regression (softmax) cost
         ## if y=1, prob = prob
         ## if y=0, prob = 1-prob
-	print "self.input_y.shape is", self.input_y.shape
-	print "self.input_y.type is",(self.input_y)
-
+	print "self.input_y.shape is",self.input_y.shape
 	print "prob.shape is", self.prob.shape
-	print "self.prob.type is",(self.prob)
 
         self.losses = self.input_y * tf.log(self.prob) + (1-self.input_y) * tf.log(1-self.prob)     ## shape [batch_size]
 #print "self.losses = ", tf.run(self.losses)
 	
         self.loss = tf.reduce_sum(self.losses)                       ## shape [1,]
-            
+	
+        ## just for test-purpose of the wrapper of this file, NO Actual Ustage
+	##self.val  = tf.Variable(initial_value=2.4)
+	##self.loss += self.val

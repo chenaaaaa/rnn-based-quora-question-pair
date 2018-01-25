@@ -29,7 +29,7 @@ class dataset(object):
         start = self.index_in_epoch
         self.index_in_epoch += batch_size
         if self.index_in_epoch > self.example_nums:
-	    print "read next epoch!"
+	    #print "read next epoch!"
             # Finished epoch
             self.epochs_completed += 1
             # Shuffle the data
@@ -59,7 +59,9 @@ class dataset(object):
             self.index_in_epoch = batch_size
             assert batch_size <= self.example_nums
         end = self.index_in_epoch
-	print "call next_batch @ start = ", start, "th sample , end = ", end,"th sample"
+	print "call next_batch @ start = ", start, "th example , end = ", end-1,"th example"
+	ratio = sum(np.array(self.label[start:end]))/batch_size *100
+	print "postive/all ratio: ", ratio
         return np.array(self.s1[start:end]),\
 	       np.array(self.s2[start:end]),\
 	       np.array(self.label[start:end]),\
