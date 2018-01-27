@@ -178,7 +178,7 @@ def read_data_sets(train_dir):
     #print("after seq2id, s1.head is", s1[:5])
     #print "s1.len is", len(s1)
 
-    seqlen1 = [len(x)-1 for x in s1]
+    seqlen1 = [max(1,len(x)-1) for x in s1]
 
     for idx , x in enumerate(s1):
 	seqlen1.append(len(s1[idx]) -1 )
@@ -196,7 +196,7 @@ def read_data_sets(train_dir):
     s2 = np.asarray(p.map(seq2id, s2))
     #s2 = np.asarray(map(seq2id, s2))
 
-    seqlen2 = [(len(x)-1) for x in s2]
+    seqlen2 = [max(1,len(x)-1) for x in s2]
 
 #    for idx , x in enumerate(s2):
 #	        seqlen2.append(len(s2[idx]) -1 )	
