@@ -36,7 +36,7 @@ tf.flags.DEFINE_float("dropout_keep_prob",0.5,"Dropout keep probability (default
 
 
 ## Training parameters
-tf.flags.DEFINE_integer("batch_size", 128, "Batch Size (default : 64)")
+tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default : 64)")
 tf.flags.DEFINE_integer("num_epochs", 200, "Number of training epochs (default:200)")
 tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default:100)")
 tf.flags.DEFINE_integer("checkpoint_every", 100, "Save model after this many steps(default:100)")
@@ -104,7 +104,7 @@ with tf.Graph().as_default():
        print "A rnn class generated" 
        # Define Training procedure
        global_step = tf.Variable(0, name = "global_step", trainable=False)
-       optimizer = tf.train.AdamOptimizer(1e-4/2)
+       optimizer = tf.train.AdamOptimizer(1e-4/5)
        grads_and_vars = optimizer.compute_gradients(rnn.loss)
        train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
        
@@ -168,22 +168,34 @@ with tf.Graph().as_default():
 
  	   #self_x1      = sess.run([rnn.x1],feed_dict)
  	   #self_x2      = sess.run([rnn.x2],feed_dict)
-	   self_rnn_output1 = sess.run([rnn.rnn_outputs1],feed_dict)
-	   self_rnn_output2 = sess.run([rnn.rnn_outputs1],feed_dict)
-	   self_rnn_final1 = sess.run([rnn.last_rnn_output1],feed_dict)
-	   self_rnn_final2 = sess.run([rnn.last_rnn_output2],feed_dict)
-	   self_idx1	   = sess.run([rnn.idx1],feed_dict)
-	   self_idx2	   = sess.run([rnn.idx2],feed_dict)
-	   self_reshape1   = sess.run([rnn.Reshape_1],feed_dict)
-	   self_reshape2   = sess.run([rnn.Reshape_2],feed_dict)
-	   print("self_idx1={}".format(self_idx1))
-	   print("self_idx2={}".format(self_idx2))
-	   print("self_reshape1 ={}".format(self_reshape1))
-	   print("self_reshape2 ={}".format(self_reshape2))
-           print("self_rnn_output1={}".format(self_rnn_output1))
-           print("self_rnn_output2={}".format(self_rnn_output2))
-           print("self_rnn_final1={}".format(self_rnn_final1))
-           print("self_rnn_final2={}".format(self_rnn_final2))
+	   #self_rnn_output1 = sess.run([rnn.rnn_outputs1],feed_dict)
+           #print("self_rnn_output1={}".format(self_rnn_output1))
+
+	   #self_rnn_output2 = sess.run([rnn.rnn_outputs2],feed_dict)
+           #print("self_rnn_output2={}".format(self_rnn_output2))
+
+	   #self_idx1	   = sess.run([rnn.idx1],feed_dict)
+	   #print("self_idx1={}".format(self_idx1))
+
+
+	   #self_idx2	   = sess.run([rnn.idx2],feed_dict)
+	   #print("self_idx2={}".format(self_idx2))
+
+	   #self_idx2	   = sess.run([rnn.idx2],feed_dict)
+	   #self_reshape1   = sess.run([rnn.Reshape_1],feed_dict)
+	   #self_reshape2   = sess.run([rnn.Reshape_2],feed_dict)
+	   #print("self_reshape1 ={}".format(self_reshape1))
+	   #print("self_reshape2 ={}".format(self_reshape2))
+           ##print("self_rnn_output2={}".format(self_rnn_output2))
+
+	   #self_rnn_final1 = sess.run([rnn.last_rnn_output1],feed_dict)
+           #print("self_rnn_final1={}".format(self_rnn_final1))
+
+
+	   #self_rnn_final2 = sess.run([rnn.last_rnn_output2],feed_dict)
+           #print("self_rnn_final2={}".format(self_rnn_final2))
+
+           #print("self_rnn_final2={}".format(self_rnn_final2))
            #print("self_x1 = {}".format(self_x1))
            #print("self_x2 = {}".format(self_x2))
            #print("self_rnn_diff_abs={}".format(self_rnn_diff_abs))
@@ -216,12 +228,13 @@ with tf.Graph().as_default():
 
 
 
-##this is the main run step
+###this is the main run step
            _, step, summaries, loss = sess.run([train_op, global_step, train_summary_op, rnn.loss],feed_dict)
            time_str = datetime.datetime.now().isoformat()
-           #print("{}: step {}, loss {:g}, pearson {:g}".format(time_str, step, loss, pearson))
+#           #print("{}: step {}, loss {:g}, pearson {:g}".format(time_str, step, loss, pearson))
            print("{}: step {}, train loss {:g}".format(time_str, step, loss))
            train_summary_writer.add_summary(summaries, step)       
+### main run step finish
 
        def dev_step(s1, s2, y,seqlen1, seqlen2, writer=None):
            """
@@ -278,5 +291,5 @@ with tf.Graph().as_default():
                print("Saved model checkpoint to {}\n".format(path))
 
             
-	   print "-----------------------------------"
+	   print "----all the batch has run finish----"
                 
