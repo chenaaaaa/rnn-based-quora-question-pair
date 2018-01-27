@@ -147,7 +147,7 @@ class TextRNN(object):
 	print "self.input_y.shape is",self.input_y.shape
 	print "prob.shape is", self.prob.shape
 
-        self.losses = self.input_y * tf.log(self.prob) + (1-self.input_y) * tf.log(1-self.prob)     ## shape [batch_size]
+        self.losses =  [-self.input_y * tf.log(self.prob) - (1-self.input_y) * tf.log(1-self.prob)]     ## shape [batch_size]
 #print "self.losses = ", tf.run(self.losses)
 	
         self.loss = tf.reduce_sum(self.losses)                       ## shape [1,]
