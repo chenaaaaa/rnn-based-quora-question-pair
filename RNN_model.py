@@ -81,7 +81,7 @@ class TextRNN(object):
         elif self.rnn_type=="lstm":
             cell = tf.contrib.rnn.BasicLSTMCell(self.number_units, state_is_tuple=True)
         elif self.rnn_type=="gru": ##needs to check
-            cell = tf.nn.rnn_cell.GRUCell(self.number_units, input_size=None, activation=tanh)
+            cell = tf.nn.rnn_cell.GRUCell(self.number_units)
 
         print "in add_encoer:cell generated"
 	## for variable reuse ....
@@ -127,30 +127,44 @@ class TextRNN(object):
         
         ## squeeze the norm1 distance between (0,1)
         self.diff_exp = tf.exp(-self.diff_abs_sum) ##shape [batch_size], 
-        
         ## automatically learn the "threshold" 
         ##"use this nolinear to map exp(-||x1-x2||) (L1 norm diff) to probability")
-        with tf.name_scope("threshold"):
-            self.thre_W = tf.Variable(name="W", initial_value = 1.0)
-            self.thre_b = tf.Variable(name="b", initial_value = tf.log(0.5))
-
-            self.wx_plus_b = self.diff_exp * self.thre_W + self.thre_b               ## shape [batch_size]
-        ##apply sigmoid OR relu ??
-        if (self.nonlinear_type == "sigmoid"):
-            self.prob = 1/(1+tf.exp(-1.0 * self.wx_plus_b)) ## shape[batch_size]
-        elif self.nonlinear_type == "relu":
-            self.prob = maximum(0,self.wx_plus_b) ## ?
-            
-        ## use logistic regression (softmax) cost
-        ## if y=1, prob = prob
-        ## if y=0, prob = 1-prob
+#        with tf.name_scope("threshold"):
+#            self.thre_W = tf.Variable(name="W", initial_value = 1.0)
+#            self.thre_b = tf.Variable(name="b", initial_value = tf.log(0.5))
+#
+#            self.wx_plus_b = self.diff_exp * self.thre_W + self.thre_b               ## shape [batch_size]
+#        ##apply sigmoid OR relu ??
+#        if (self.nonlinear_type == "sigmoid"):
+#            self.prob = 1/(1+tf.exp(-1.0 * self.wx_plus_b)) ## shape[batch_size]
+#        elif self.nonlinear_type == "relu":
+#            self.prob = maximum(0,self.wx_plus_b) ## ?
+#        ## use logistic regression (softmax) cost
+#        ## if y=1, prob = prob
+#        ## if y=0, prob = 1-prob
 	print "self.input_y.shape is",self.input_y.shape
-	print "prob.shape is", self.prob.shape
+	#print "prob.shape is", self.prob.shape
 
-        self.losses =  [-self.input_y * tf.log(self.prob) - (1-self.input_y) * tf.log(1-self.prob)]     ## shape [batch_size]
+	## anch add for accuracy:2018-02-04
+	self.comp = self.diff_exp - self.input_y
+	self.comp = tf.abs(self.comp)
+
+	self.resu = 0.5 - self.comp
+	self.resu = tf.sign(self.resu)
+	self.accuracy = tf.reduce_mean(tf.cast(self.resu, tf.float32))
+
+
+
+	very_small = tf.constant(1e-16,shape=[self.batch_size]);
+
+        #self.losses =  [-self.input_y * tf.log(self.prob) - (1-self.input_y) * tf.log(1-self.prob)]     ## shape [batch_size]
+        self.losses =  [-self.input_y * tf.log(self.diff_exp) - (1-self.input_y) * tf.log(1-self.diff_exp+very_small)]     ## shape [batch_size]
+	
+
 #print "self.losses = ", tf.run(self.losses)
 	
-        self.loss = tf.reduce_sum(self.losses)                       ## shape [1,]
+        #self.loss = tf.reduce_sum(self.losses)/(self.batch_size*2)                       ## shape [1,]
+        self.loss = tf.reduce_sum(self.losses)                    ## shape [1,]
 	
         ## just for test-purpose of the wrapper of this file, NO Actual Ustage
 	##self.val  = tf.Variable(initial_value=2.4)

@@ -59,9 +59,9 @@ class dataset(object):
             self.index_in_epoch = batch_size
             assert batch_size <= self.example_nums
         end = self.index_in_epoch
-	print "call next_batch @ start = ", start, "th example , end = ", end-1,"th example"
+	#print "call next_batch @ start = ", start, "th example , end = ", end-1,"th example"
 	ratio = sum(np.array(self.label[start:end]))/batch_size *100
-	print "postive/all ratio: ", ratio
+	#print "postive/all ratio: ", ratio
         return np.array(self.s1[start:end]),\
 	       np.array(self.s2[start:end]),\
 	       np.array(self.label[start:end]),\
@@ -72,7 +72,7 @@ def clean_str(string):
     #
     #对句子相似度任务进行字符清洗
     #
-#print "before clean_str, string = ",string
+    #print "before clean_str, string = ",string
     string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
     string = re.sub(r"\'s", " \'s", string)
     string = re.sub(r"\'ve", " \'ve", string)
@@ -86,7 +86,7 @@ def clean_str(string):
     string = re.sub(r"\)", " \) ", string)
     string = re.sub(r"\?", " \? ", string)
     string = re.sub(r"\s{2,}", " ", string)
-#   print "after clear, string = ", string
+    #print "after clear, string = ", string
     return string.strip().lower()
 
 def padding_sentence(s1, s2):
@@ -95,7 +95,9 @@ def padding_sentence(s1, s2):
     # 然后用<unk>对句子进行填充
     #
     s1_length_max = max([len(s) for s in s1])
+    print "s1_length_max = ", s1_length_max
     s2_length_max = max([len(s) for s in s2])
+    print "s2_length_max = ", s1_length_max
     sentence_length = max(s1_length_max, s2_length_max)
     sentence_num = s1.shape[0]
     s1_padding = np.zeros([sentence_num, sentence_length], dtype=int)
@@ -118,7 +120,7 @@ def get_id(word):
 def seq2id(seq):
 
     seq = clean_str(seq)
-#print "seq = ", seq
+    #print "seq = ", seq
 #print "seq=clean_str is finish"
     seq_split = seq.split(' ')
     seq_id = map(get_id, seq_split)
@@ -167,8 +169,9 @@ def read_data_sets(train_dir):
 
     # word2id, 多线程将word转成id
     p = Pool()
+    print "seq2id s1"
     s1 = np.asarray(p.map(seq2id, s1))
-
+    print "seq2id s1 finish"
 
     seqlen1 = []
     seqlen2 = []
@@ -192,8 +195,10 @@ def read_data_sets(train_dir):
     #print "seqlen1.tail is", seqlen1[-1-5:]
     #print "-------------------------"
     #print "score.tail is", score[-1-5:] 
-
+    print "seq2id s2"
     s2 = np.asarray(p.map(seq2id, s2))
+    print "seq2id s2 finish"
+
     #s2 = np.asarray(map(seq2id, s2))
 
     seqlen2 = [max(1,len(x)-1) for x in s2]
@@ -229,7 +234,7 @@ def read_data_sets(train_dir):
 #s1 = s1[new_index]
 #s2 = s2[new_index]
 #score = score[new_index]
-
+    print "s1.len is", len(s1)
     return s1 ,s2, score, seqlen1, seqlen2
 
 def build_glove_dic():

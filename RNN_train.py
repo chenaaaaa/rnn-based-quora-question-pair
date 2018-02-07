@@ -1,4 +1,4 @@
- #coding=utf-8
+#coding=utf-8
 #! /usr/bin/env python
 
 import datetime
@@ -18,16 +18,17 @@ from RNN_model import TextRNN
 # Data loading params
 tf.flags.DEFINE_float("train_sample_percentage", 0.75, "Percentage of the training data to use for validation")
 
-tf.flags.DEFINE_string("data_file","train_small.csv","Data source")
-#tf.flags.DEFINE_string("data_file","train.csv","Data source")
+#tf.flags.DEFINE_string("data_file","train_small.csv","Data source")
+tf.flags.DEFINE_string("data_file","train.csv","Data source")
 
 ## Model Hyperparamters
-tf.flags.DEFINE_string("rnn_type", "rnn", "use rnn or lstm or gru ")
+#tf.flags.DEFINE_string("rnn_type", "rnn", "use rnn or lstm or gru ")
+tf.flags.DEFINE_string("rnn_type", "gru", "use rnn or lstm or gru ")
 #tf.flags.DEFINE_string("rnn_type", "lstm", "use rnn or lstm or gru ")
 
 tf.flags.DEFINE_string("nonlinear_type", "sigmoid", "use this nonlinear to map exp(-||x1-x2||) to probability") 
 tf.flags.DEFINE_integer("l2_reg_lambda", 0.0, " should consider whether to use this")
-tf.flags.DEFINE_integer("number_units", 9, "rnn internal neural cells (h) numbers")
+tf.flags.DEFINE_integer("number_units", 50, "rnn internal neural cells (h) numbers")
 tf.flags.DEFINE_boolean("embedding_trainable", False, "whether word2vec embedding is trainable")
 tf.flags.DEFINE_float("dropout_keep_prob",0.5,"Dropout keep probability (default:0.5)")
 
@@ -36,10 +37,10 @@ tf.flags.DEFINE_float("dropout_keep_prob",0.5,"Dropout keep probability (default
 
 
 ## Training parameters
-tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default : 64)")
+tf.flags.DEFINE_integer("batch_size", 4096, "Batch Size (default : 64)")
 tf.flags.DEFINE_integer("num_epochs", 200, "Number of training epochs (default:200)")
-tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default:100)")
-tf.flags.DEFINE_integer("checkpoint_every", 100, "Save model after this many steps(default:100)")
+tf.flags.DEFINE_integer("evaluate_every", 1000, "Evaluate model on dev set after this many steps (default:100)")
+tf.flags.DEFINE_integer("checkpoint_every", 1000, "Save model after this many steps(default:100)")
 tf.flags.DEFINE_integer("num_checkpoints",5,"Number of checkpoints to store (default: 5)")
 
 # Misc Parameters
@@ -104,7 +105,7 @@ with tf.Graph().as_default():
        print "A rnn class generated" 
        # Define Training procedure
        global_step = tf.Variable(0, name = "global_step", trainable=False)
-       optimizer = tf.train.AdamOptimizer(1e-4/5)
+       optimizer = tf.train.AdamOptimizer(0.01)
        grads_and_vars = optimizer.compute_gradients(rnn.loss)
        train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
        
@@ -161,32 +162,32 @@ with tf.Graph().as_default():
                rnn.input_seqlen2 : seqlen2,
                rnn.dropout_keep_prob:FLAGS.dropout_keep_prob
            }
-           #_, step, summaries, loss , pearson
-           _, step, summaries, loss = sess.run([train_op, global_step, train_summary_op, rnn.loss],feed_dict)
 
 ##Just for test purpose begin
+	   self_accu	  = sess.run([rnn.accuracy],feed_dict)
+	   print ("accuracy = {}".format(self_accu))
 
- 	   #self_x1      = sess.run([rnn.x1],feed_dict)
- 	   #self_x2      = sess.run([rnn.x2],feed_dict)
-	   #self_rnn_output1 = sess.run([rnn.rnn_outputs1],feed_dict)
-           #print("self_rnn_output1={}".format(self_rnn_output1))
+ 	   ##self_x1      = sess.run([rnn.x1],feed_dict)
+ 	   ##self_x2      = sess.run([rnn.x2],feed_dict)
+	   ##self_rnn_output1 = sess.run([rnn.rnn_outputs1],feed_dict)
+           ##print("self_rnn_output1={}".format(self_rnn_output1))
 
-	   #self_rnn_output2 = sess.run([rnn.rnn_outputs2],feed_dict)
-           #print("self_rnn_output2={}".format(self_rnn_output2))
-
-	   #self_idx1	   = sess.run([rnn.idx1],feed_dict)
-	   #print("self_idx1={}".format(self_idx1))
-
-
-	   #self_idx2	   = sess.run([rnn.idx2],feed_dict)
-	   #print("self_idx2={}".format(self_idx2))
-
-	   #self_idx2	   = sess.run([rnn.idx2],feed_dict)
-	   #self_reshape1   = sess.run([rnn.Reshape_1],feed_dict)
-	   #self_reshape2   = sess.run([rnn.Reshape_2],feed_dict)
-	   #print("self_reshape1 ={}".format(self_reshape1))
-	   #print("self_reshape2 ={}".format(self_reshape2))
+	   ##self_rnn_output2 = sess.run([rnn.rnn_outputs2],feed_dict)
            ##print("self_rnn_output2={}".format(self_rnn_output2))
+
+	   ##self_idx1	   = sess.run([rnn.idx1],feed_dict)
+	   ##print("self_idx1={}".format(self_idx1))
+
+
+	   ##self_idx2	   = sess.run([rnn.idx2],feed_dict)
+	   ##print("self_idx2={}".format(self_idx2))
+
+	   ##self_idx2	   = sess.run([rnn.idx2],feed_dict)
+	   ##self_reshape1   = sess.run([rnn.Reshape_1],feed_dict)
+	   ##self_reshape2   = sess.run([rnn.Reshape_2],feed_dict)
+	   ##print("self_reshape1 ={}".format(self_reshape1))
+	   ##print("self_reshape2 ={}".format(self_reshape2))
+           ###print("self_rnn_output2={}".format(self_rnn_output2))
 
 	   #self_rnn_final1 = sess.run([rnn.last_rnn_output1],feed_dict)
            #print("self_rnn_final1={}".format(self_rnn_final1))
@@ -212,19 +213,17 @@ with tf.Graph().as_default():
 	   #self_rnn_diff_abs = sess.run([rnn.diff_abs],feed_dict)
 	   #self_rnn_diff_abs_sum = sess.run([rnn.diff_abs_sum],feed_dict)
 	   #self_rnn_diff_exp 	= sess.run([rnn.diff_exp],feed_dict)
+           #print("self_rnn_diff_exp={}".format(self_rnn_diff_exp))
 	   #self_rnn_wx_plus_b = sess.run([rnn.wx_plus_b],feed_dict)
 	   #self_prob	      = sess.run([rnn.prob],feed_dict)
 	   #self_losses	      = sess.run([rnn.losses],feed_dict)
 	   #self_loss	      = sess.run([rnn.loss], feed_dict)
-	   self_thre_W	      = sess.run([rnn.thre_W],feed_dict)
-	   self_thre_b	      = sess.run([rnn.thre_b],feed_dict)
-           print("self_thre_W={}".format(self_thre_W))
-           print("self_thre_b={}".format(self_thre_b))
+	   #self_thre_W	      = sess.run([rnn.thre_W],feed_dict)
+	   #self_thre_b	      = sess.run([rnn.thre_b],feed_dict)
+           #print("self_thre_W={}".format(self_thre_W))
+           #print("self_thre_b={}".format(self_thre_b))
 	   ##self_val	      = sess.run([rnn.val],feed_dict) 
 ##Just for test purpose end
-
-
-
 
 
 
@@ -268,8 +267,10 @@ with tf.Graph().as_default():
        # Training loop. For each batch...
        
        for i in range(40000):
-	   #print "this is the key round"
-	   print "batch =",i
+	   print "batch_i =",i
+	   print "batch_size = ", FLAGS.batch_size
+	   print "data_file = ", FLAGS.data_file
+	   print "neural-network type is ", FLAGS.rnn_type
            ## next_batch needs modify fo rnn.
            batch_train = STS_train.next_batch(FLAGS.batch_size)
            
@@ -291,5 +292,5 @@ with tf.Graph().as_default():
                print("Saved model checkpoint to {}\n".format(path))
 
             
-	   print "----all the batch has run finish----"
+	   #print "----all the batch has run finish----"
                 
