@@ -21,38 +21,82 @@ class dataset(object):
         self.label = label
 	self.seqlen1 = seqlen1
 	self.seqlen2 = seqlen2
+	self.seqlen1 = np.array(self.seqlen1)
+	self.seqlen2 = np.array(self.seqlen2)
 ##self.example_nums 是总共样本的个数
         self.example_nums = len(label)
         self.epochs_completed = 0
+
+	#print "s1.type is", type(self.s1)
+	#print "s2.type is",type(self.s2)
+	#print "seqlen1 type is", type(self.seqlen1)
+	#print "seqlen2 type is", type(self.seqlen2)
+	#print "label type is", type(self.label)
 
     def next_batch(self,batch_size):
         start = self.index_in_epoch
         self.index_in_epoch += batch_size
         if self.index_in_epoch > self.example_nums:
-	    #print "read next epoch!"
+
             # Finished epoch
             self.epochs_completed += 1
+	    print "read next epoch!, epoch = ",self.epochs_completed  
             # Shuffle the data
             perm = np.arange(self.example_nums)
             np.random.shuffle(perm)
+
             self.s1 = self.s1[perm]
             self.s2 = self.s2[perm]
             self.label = self.label[perm]
-	    self.seqlen1 = np.array(self.seqlen1)
-	    self.seqlen2 = np.array(self.seqlen2)
-
 	    self.seqlen1 = self.seqlen1[perm]
 	    self.seqlen2 = self.seqlen2[perm]
-	    #print "self.s1.head is", self.s1[:1]
-	    #print "self.s2.head is", self.s2[:1]
-	    #print "self.seqlen1.head is",self.seqlen1[:1]
-	    #print "self.seqlen2.head is",self.seqlen2[:1]
-            #print "self.s1.second is", self.s1[1:2]
-            #print "self.s2.second is", self.s2[1:2]
-            #print "self.seqlen1.second is",self.seqlen1[1:2]
-            #print "self.seqlen2.second is",self.seqlen2[1:2]
+	    # swap s1 and s2
+	    
+	    #print "after permutation, self.s1 is", self.s1[ self.example_nums-5:]
+	    #print "after permutation, self.s2 is", self.s2[ self.example_nums-5:]
+	    #print "after permutation, self.length s1 is", self.seqlen1[ self.example_nums-5:]
+	    #print "after permutation, self.length s2 is", self.seqlen2[ self.example_nums-5:]
+	    #print "after permutation, self.label is", self.label[ self.example_nums-5:]
+
+	    for idx in range(self.example_nums):
+		#if ( self.example_nums-idx <10): dbg_idx = True
+	      	#else        : dbg_idx = False
+		#dbg_idx = False
+
+		#if (dbg_idx) :print "idx = ", idx
+		rand = np.random.random()
+		#if (dbg_idx) :print "rand = ", rand
+
+		if (rand > 0.5) :
+		    swap = True	
+	        else:
+		    swap = False
 
 
+
+		if (swap):
+		    tmp_s1 = self.s1[idx].copy()
+		    tmp_s2 = self.s2[idx].copy()
+		    self.s1[idx]  = tmp_s2
+		    self.s2[idx]  = tmp_s1
+		    
+	            #tmp_seqlen1 = self.seqlen1[idx].copy()
+		    #tmp_seqlen2 = self.seqlen2[idx].copy()
+
+
+	            tmp_seqlen1 = self.seqlen1[idx]
+		    tmp_seqlen2 = self.seqlen2[idx]
+
+		    self.seqlen1[idx] = tmp_seqlen2
+		    self.seqlen2[idx] = tmp_seqlen1
+
+
+
+            #print "after swap, self.s1 is", self.s1[ self.example_nums-5:]
+            #print "after swap, self.s2 is", self.s2[ self.example_nums-5:]
+            #print "after swap, self.length s1 is", self.seqlen1[ self.example_nums-5:]
+            #print "after swap, self.length s2 is", self.seqlen2[ self.example_nums-5:]
+            #print "after swap, self.label is", self.label[ self.example_nums-5:]
 
             # Start next epoch
             start = 0
@@ -118,17 +162,18 @@ def get_id(word):
         return sr_word2id['<unk>']
 
 def seq2id(seq):
-
+    #print "before seq2id, seq is", seq
     seq = clean_str(seq)
     #print "seq = ", seq
 #print "seq=clean_str is finish"
     seq_split = seq.split(' ')
     seq_id = map(get_id, seq_split)
 #print "len(seq)=", len(seq_id)
-#print"seq_id = map is finish"
+    #print"seq_id = map is finish"
     return seq_id
 
 def read_data_sets(train_dir):
+
     #
     # s1代表数据集的句子1
     # s2代表数据集的句子2
@@ -137,8 +182,8 @@ def read_data_sets(train_dir):
     #
     df_sick = pd.read_csv(train_dir, usecols=[3,4,5], names=['s1', 's2', 'score'], dtype={'s1':object, 's2':object, 'score':object})
 
-    print "df_sick.shape is", df_sick.shape
-    #print(df_sick.head(5))
+    #print "df_sick.shape is", df_sick.shape
+    #print("train_set.head is", df_sick.head(5))
     df_sick = df_sick.drop([0])
     s1 = df_sick.s1.values
     #print("s1.head is", s1[:5])
@@ -165,13 +210,14 @@ def read_data_sets(train_dir):
     # 引入embedding矩阵和字典
     global sr_word2id, word_embedding
     sr_word2id, word_embedding = build_glove_dic()
-    print "build_glove_dic() finish"
+    #print "build_glove_dic() finish"
 
     # word2id, 多线程将word转成id
-    p = Pool()
-    print "seq2id s1"
-    s1 = np.asarray(p.map(seq2id, s1))
-    print "seq2id s1 finish"
+    #p = Pool()
+    #print "seq2id s1"
+    #s1 = np.asarray(p.map(seq2id, s1))
+    s1 = np.asarray(map(seq2id, s1))
+    #print "seq2id s1 finish"
 
     seqlen1 = []
     seqlen2 = []
@@ -195,9 +241,12 @@ def read_data_sets(train_dir):
     #print "seqlen1.tail is", seqlen1[-1-5:]
     #print "-------------------------"
     #print "score.tail is", score[-1-5:] 
-    print "seq2id s2"
-    s2 = np.asarray(p.map(seq2id, s2))
-    print "seq2id s2 finish"
+    #print "seq2id s2"
+    #s2 = np.asarray(p.map(seq2id, s2))
+    s2 = np.asarray(map(seq2id, s2))
+
+
+    #print "seq2id s2 finish"
 
     #s2 = np.asarray(map(seq2id, s2))
 
@@ -227,15 +276,141 @@ def read_data_sets(train_dir):
 #    print "p.join() finish"
 
     # 填充句子
-    print "about to padding sentense"
+    #print "about to padding sentense"
     s1, s2 = padding_sentence(s1, s2)
 
 #new_index = np.random.permutation(sample_num)
 #s1 = s1[new_index]
 #s2 = s2[new_index]
 #score = score[new_index]
-    print "s1.len is", len(s1)
+    #print "s1.len is", len(s1)
+    print "read training data: about to return"
     return s1 ,s2, score, seqlen1, seqlen2
+
+
+def read_test_sets(test_dir):
+    print "read_test_data"
+    df_disk = pd.read_csv(test_dir)
+    #print type(df_disk)
+    
+    #s1_null = pd.isnull(df_disk['question1'])
+    #s2_null = pd.isnull(df_disk['question2']) 
+    #s1_null_true = s1_null[ s1_null == True]
+    #s2_null_true = s2_null[ s2_null == True]
+    #s1_null_count = len(s1_null_true)
+    #s2_null_count = len(s2_null_true)
+    #print "s1_null_count = ", s1_null_count
+    #print "s2_null_count = ", s2_null_count
+
+
+    #df_disk.fillna('missing missing missing', inplace=True)
+
+    #print "after fillna"
+    #s1_null = pd.isnull(df_disk['question1'])
+    #s2_null = pd.isnull(df_disk['question2'])
+    #s1_null_true = s1_null[ s1_null == True]
+    #s2_null_true = s2_null[ s2_null == True]
+    #s1_null_count = len(s1_null_true)
+    #s2_null_count = len(s2_null_true)
+    #print "s1_null_count = ", s1_null_count
+    #print "s2_null_count = ", s2_null_count
+
+
+
+
+    #
+    # s1代表数据集的句子1
+    # s2代表数据集的句子2
+    # score代表相似度
+    # sample_num代表数据总共有多少行
+    #
+    df_sick = pd.read_csv(test_dir, usecols=[1,2], names=['s1', 's2'], dtype={'s1':object, 's2':object})
+    #df_sick = pd.read_csv(test_dir)
+
+    print "df_sick.shape is", df_sick.shape
+    print(df_sick.head(5))
+    df_sick = df_sick.drop([0])
+    print("after drop[0]," , df_sick.head(5))
+    s1 = df_sick.s1.values
+    #print("s1.head is", s1[:5])
+    #print("")
+    #print("")
+    #print("")
+
+    s2 = df_sick.s2.values
+    #print("s2.head is", s2[:5])
+    #print("")
+    #print("")
+    #print("")
+    #score = np.asarray(map(float, df_sick.score.values), dtype=np.float32)
+    #print
+    #print
+    #print
+    sample_num = len(s1)
+    print "len_s1 = ", sample_num
+
+    #print
+    #print
+
+
+    # 引入embedding矩阵和字典
+    global sr_word2id, word_embedding
+    sr_word2id, word_embedding = build_glove_dic()
+    print "read_test_data: build_glove_dic() finish"
+
+    # word2id, 多线程将word转成id
+    p = Pool()
+    print "read_test_data: seq2id s1"
+    #list_tmp = []
+    #for idx, s in enumerate(s1):
+    #    print "idx = ", idx
+    #    list_tmp.append(seq2id(s))
+    #s1 = np.asarray(list_tmp)
+
+    s1 = np.asarray(p.map(seq2id, s1))
+    #s1 = np.asarray(map(seq2id, s1))
+    print "read_test_data:seq2id s1 finish"
+
+    seqlen1 = []
+    seqlen2 = []
+
+#    s1 = np.asarray(map(seq2id, s1))
+
+    #print("after seq2id, s1.head is", s1[:5])
+    #print "s1.len is", len(s1)
+
+    seqlen1 = [max(1,len(x)-1) for x in s1]
+
+    print "read_test_data: seq2id s2"
+
+    #for idx, s in enumerate(s2):
+    #    print "idx = ", idx
+    #    list_tmp.append(seq2id(s))
+    #s2 = np.asarray(list_tmp)
+
+    s2 = np.asarray(p.map(seq2id, s2))
+
+
+
+
+    #s2 = np.asarray(p.map(seq2id, s2))
+    print "read_test_data: seq2id s2 finish"
+
+    #s2 = np.asarray(map(seq2id, s2))
+
+
+    seqlen2 = [max(1,len(x)-1) for x in s2]
+
+
+    # 填充句子
+    print "about to padding sentense"
+    s1, s2 = padding_sentence(s1, s2)
+
+    print "s1.len is", len(s1)
+    print "read_test_data: about to return"
+    return s1 ,s2, seqlen1, seqlen2
+
+
 
 def build_glove_dic():
     # 从文件中读取 pre-trained 的 glove 文件，对应每个词的词向量
